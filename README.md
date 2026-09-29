@@ -28,3 +28,12 @@ For `docker compose up --build` to locate all service directories correctly usin
 ├── 📁 GuestHouse-Booking-System/
 ├── 📁 GuestHouse-Customer-Service/
 └── 📁 GuestHouse-Review-Service/
+
+## Running Tests
+Tests start their own MySQL 8.0 container through Testcontainers, so Docker must be running. No database or environment variables are needed.
+
+```bash
+./mvnw test
+```
+
+Use JDK 21. Lombok fails to compile on newer JDKs.

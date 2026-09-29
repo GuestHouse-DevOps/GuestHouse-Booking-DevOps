@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Room {
+public class Room extends Timestamped {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
