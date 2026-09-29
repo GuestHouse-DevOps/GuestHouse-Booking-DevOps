@@ -20,6 +20,8 @@ target/
 *.ipr
 /src/main/resources/application-local.properties
 src/test/resources/application-local.properties
+.env
+*.env
 
 ### NetBeans ###
 /nbproject/private/
