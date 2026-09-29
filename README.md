@@ -28,3 +28,14 @@ For `docker compose up --build` to locate all service directories correctly usin
 ├── 📁 GuestHouse-Booking-System/
 ├── 📁 GuestHouse-Customer-Service/
 └── 📁 GuestHouse-Review-Service/
+
+## Change History
+Every create, update and delete of a booking, room or customer writes a row to the `audit_event` table with the entity type, entity id, action and time. To see one booking's history:
+
+```sql
+SELECT action, occurred_at FROM audit_event
+WHERE entity_type = 'BOOKING' AND entity_id = 42
+ORDER BY occurred_at DESC;
+```
+
+Customer events are written by this service after Customer Service confirms the change.
