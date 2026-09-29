@@ -13,28 +13,6 @@ jobs:
     name: Test and Build
     runs-on: ubuntu-latest
 
-    env:
-      SPRING_DATASOURCE_URL: jdbc:mysql://127.0.0.1:3306/guesthousebooking?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
-      SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_PASSWORD: rootpassword
-      SPRING_PROFILES_ACTIVE: local
-      CUSTOMER_SERVICE_URL: http://localhost:8081
-      REVIEW_SERVICE_URL: http://localhost:8082
-
-    services:
-      mysql:
-        image: mysql:8.0
-        env:
-          MYSQL_ROOT_PASSWORD: rootpassword
-          MYSQL_DATABASE: guesthousebooking
-        ports:
-          - 3306:3306
-        options: >-
-          --health-cmd="mysqladmin ping -h localhost -uroot -prootpassword"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=10
-
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
