@@ -11,6 +11,7 @@ import org.nackademin.guesthousebookingsystem.entity.Room;
 import org.nackademin.guesthousebookingsystem.entity.RoomType;
 import org.nackademin.guesthousebookingsystem.repository.BookingRepository;
 import org.nackademin.guesthousebookingsystem.repository.RoomRepository;
+import jakarta.persistence.EntityManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
@@ -35,6 +36,9 @@ class BookingServiceImplTest {
 
     @Autowired
     private RoomRepository roomRepository;
+
+    @Autowired
+    private EntityManager entityManager;
 
     @MockitoBean
     private CustomerClient customerClient;
@@ -116,6 +120,27 @@ class BookingServiceImplTest {
 
         BookingDto result = bookingService.updateBooking(savedBooking.getId(), updateInfo);
         assertEquals(LocalDate.of(2026, 7, 2), result.getStartDate());
+    }
+
+    @Test
+    void updateBooking_shouldKeepCreatedAtAndSetUpdatedAt() {
+        entityManager.flush();
+        entityManager.clear();
+        Booking before = bookingRepository.findById(savedBooking.getId()).orElseThrow();
+        assertNotNull(before.getCreatedAt());
+        entityManager.clear();
+
+        RoomDto roomDto = new RoomDto(savedRoom.getId(), 101, RoomType.DOUBLE, 1);
+        BookingDto updateInfo = new BookingDto(null, customerId, null, roomDto,
+                LocalDate.of(2026, 7, 2),
+                LocalDate.of(2026, 7, 6));
+        bookingService.updateBooking(savedBooking.getId(), updateInfo);
+        entityManager.flush();
+        entityManager.clear();
+
+        Booking after = bookingRepository.findById(savedBooking.getId()).orElseThrow();
+        assertEquals(before.getCreatedAt(), after.getCreatedAt());
+        assertFalse(after.getUpdatedAt().isBefore(before.getUpdatedAt()));
     }
 
     @Test

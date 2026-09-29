@@ -11,7 +11,7 @@ import java.time.LocalDate;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Booking {
+public class Booking extends Timestamped {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
