@@ -19,6 +19,7 @@ public interface RoomRepository extends JpaRepository<Room, Long> {
                 WHERE b.startDate < :endDate
                 AND b.endDate > :startDate
             )
+            AND r.dirty = false
             AND (
                 CASE WHEN r.roomType = 'SINGLE' THEN 1 ELSE 2 END
                 + r.extraBeds

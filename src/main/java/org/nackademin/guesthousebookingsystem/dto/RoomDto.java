@@ -14,4 +14,5 @@ public class RoomDto {
     private int roomNumber;
     private RoomType roomType;
     private int extraBeds;
+    private boolean dirty;
 }

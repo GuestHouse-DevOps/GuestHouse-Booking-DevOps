@@ -14,7 +14,7 @@ public interface BookingService {
 
     BookingDto updateBooking(Long id, BookingDto bookingDto);
 
-    void deleteBooking(Long id);
+    void cancelBooking(Long id);
 
     boolean customerHasActiveBookings(Long customerId);
 

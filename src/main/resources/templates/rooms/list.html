@@ -132,6 +132,19 @@
 
                     </div>
 
+                    <div class="mb-3 form-check" th:if="${editMode}">
+
+                        <input type="checkbox"
+                               class="form-check-input"
+                               th:field="*{dirty}">
+
+                        <label class="form-check-label"
+                               th:for="${#ids.prev('dirty')}">
+                            Behöver städas
+                        </label>
+
+                    </div>
+
                     <button type="submit"
                             th:class="${editMode} ?
                             'btn btn-warning w-100' :
@@ -285,6 +298,7 @@
                         <th>Rumsnummer</th>
                         <th>Typ</th>
                         <th>Extrasängar</th>
+                        <th>Städning</th>
                         <th>Åtgärd</th>
 
                     </tr>
@@ -302,6 +316,8 @@
                         <td th:text="${r.roomType}"></td>
 
                         <td th:text="${r.extraBeds}"></td>
+
+                        <td th:text="${r.dirty} ? 'Behöver städas' : 'Städat'"></td>
 
                         <td>
 

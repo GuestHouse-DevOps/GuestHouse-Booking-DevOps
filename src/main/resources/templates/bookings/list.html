@@ -102,6 +102,17 @@
                                required>
                     </div>
 
+                    <div class="mb-3" th:if="${editMode}">
+                        <label>Status</label>
+                        <select class="form-control"
+                                th:field="*{status}">
+                            <option th:each="s : ${statuses}"
+                                    th:value="${s}"
+                                    th:text="${s}">
+                            </option>
+                        </select>
+                    </div>
+
                     <button type="submit"
                             th:class="${editMode} ?
                             'btn btn-warning w-100' :
@@ -133,6 +144,7 @@
                         <th>Rum</th>
                         <th>Start</th>
                         <th>Slut</th>
+                        <th>Status</th>
                         <th>Åtgärder</th>
                     </tr>
                     </thead>
@@ -142,15 +154,17 @@
                         <td th:text="${b.room.roomNumber}"></td>
                         <td th:text="${b.startDate}"></td>
                         <td th:text="${b.endDate}"></td>
+                        <td th:text="${b.status}"></td>
                         <td>
                             <a th:href="@{/bookings/edit/{id}(id=${b.id})}"
                                class="btn btn-sm btn-primary">
                                 Edit
                             </a>
-                            <a th:href="@{/bookings/delete/{id}(id=${b.id})}"
+                            <a th:if="${b.status.name() != 'CANCELLED'}"
+                               th:href="@{/bookings/cancel/{id}(id=${b.id})}"
                                class="btn btn-sm btn-danger"
                                onclick="return confirm('Är du säker?')">
-                                Delete
+                                Cancel
                             </a>
                         </td>
                     </tr>
