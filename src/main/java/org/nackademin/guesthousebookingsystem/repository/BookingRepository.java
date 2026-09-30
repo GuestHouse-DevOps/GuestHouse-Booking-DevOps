@@ -1,6 +1,7 @@
 package org.nackademin.guesthousebookingsystem.repository;
 
 import org.nackademin.guesthousebookingsystem.entity.Booking;
+import org.nackademin.guesthousebookingsystem.entity.BookingStatus;
 import org.nackademin.guesthousebookingsystem.entity.Room;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -16,7 +17,9 @@ public interface BookingRepository
 
     List<Booking> findByCustomerId(Long customerId);
 
-    boolean existsByCustomerId(Long customerId);
+    boolean existsByCustomerIdAndStatusNot(
+            Long customerId,
+            BookingStatus status);
 
     boolean existsByCustomerIdAndRoomId(
             Long customerId,
@@ -28,6 +31,7 @@ public interface BookingRepository
             AND b.startDate   < :endDate
             AND b.endDate     > :startDate
             AND b.id         != :excludeId
+            AND b.status     != org.nackademin.guesthousebookingsystem.entity.BookingStatus.CANCELLED
             """)
     List<Booking> findOverlapping(
             @Param("roomId")    Long roomId,

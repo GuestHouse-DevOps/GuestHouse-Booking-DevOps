@@ -22,11 +22,11 @@ public class RoomServiceImpl implements RoomService {
     private final AuditEventRepository auditEventRepository;
 
     private RoomDto toDto(Room room) {
-        return new RoomDto(room.getId(), room.getRoomNumber(), room.getRoomType(), room.getExtraBeds());
+        return new RoomDto(room.getId(), room.getRoomNumber(), room.getRoomType(), room.getExtraBeds(), room.isDirty());
     }
 
     private Room toEntity(RoomDto dto) {
-        return new Room(dto.getId(), dto.getRoomNumber(), dto.getRoomType(), dto.getExtraBeds());
+        return new Room(dto.getId(), dto.getRoomNumber(), dto.getRoomType(), dto.getExtraBeds(), dto.isDirty());
     }
 
     @Override

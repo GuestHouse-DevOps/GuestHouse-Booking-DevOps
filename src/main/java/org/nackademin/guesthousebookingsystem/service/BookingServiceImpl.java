@@ -7,6 +7,7 @@ import org.nackademin.guesthousebookingsystem.dto.CustomerDto;
 import org.nackademin.guesthousebookingsystem.dto.RoomDto;
 import org.nackademin.guesthousebookingsystem.entity.AuditEvent;
 import org.nackademin.guesthousebookingsystem.entity.Booking;
+import org.nackademin.guesthousebookingsystem.entity.BookingStatus;
 import org.nackademin.guesthousebookingsystem.entity.Room;
 import org.nackademin.guesthousebookingsystem.repository.AuditEventRepository;
 import org.nackademin.guesthousebookingsystem.repository.BookingRepository;
@@ -30,7 +31,8 @@ public class BookingServiceImpl implements BookingService {
                 booking.getRoom().getId(),
                 booking.getRoom().getRoomNumber(),
                 booking.getRoom().getRoomType(),
-                booking.getRoom().getExtraBeds()
+                booking.getRoom().getExtraBeds(),
+                booking.getRoom().isDirty()
         );
 
         String customerName = "Kund-id: "
@@ -51,7 +53,8 @@ public class BookingServiceImpl implements BookingService {
                 customerName,
                 roomDto,
                 booking.getStartDate(),
-                booking.getEndDate()
+                booking.getEndDate(),
+                booking.getStatus()
         );
     }
 
@@ -65,7 +68,10 @@ public class BookingServiceImpl implements BookingService {
                 dto.getCustomerId(),
                 room,
                 dto.getStartDate(),
-                dto.getEndDate()
+                dto.getEndDate(),
+                dto.getStatus() != null
+                        ? dto.getStatus()
+                        : BookingStatus.CONFIRMED
         );
     }
 
@@ -78,6 +84,9 @@ public class BookingServiceImpl implements BookingService {
             throw new IllegalArgumentException(
                     "Utcheckningsdatum måste vara "
                             + "efter incheckningsdatum");
+        }
+        if (dto.getStatus() == BookingStatus.CANCELLED) {
+            return;
         }
         List<Booking> conflicts = bookingRepository.findOverlapping(
                 dto.getRoom().getId(),
@@ -119,8 +128,12 @@ public class BookingServiceImpl implements BookingService {
                             + " hittades inte");
         }
         checkConflicts(bookingDto, -1L);
-        Booking saved = bookingRepository.save(
-                toEntity(bookingDto));
+        Booking booking = toEntity(bookingDto);
+        if (booking.getRoom().isDirty()) {
+            throw new IllegalStateException(
+                    "Rummet måste städas innan det kan bokas");
+        }
+        Booking saved = bookingRepository.save(booking);
         auditEventRepository.save(new AuditEvent(
                 AuditEvent.Type.BOOKING, saved.getId(),
                 AuditEvent.Action.CREATED));
@@ -139,8 +152,18 @@ public class BookingServiceImpl implements BookingService {
         }
         bookingDto.setId(id);
         checkConflicts(bookingDto, id);
+        BookingStatus previousStatus = bookingRepository.findById(id)
+                .orElseThrow(() ->
+                        new RuntimeException(
+                                "Bokning hittades inte"))
+                .getStatus();
         Booking saved = bookingRepository.save(
                 toEntity(bookingDto));
+        if (saved.getStatus() == BookingStatus.CHECKED_OUT
+                && previousStatus != BookingStatus.CHECKED_OUT) {
+            saved.getRoom().setDirty(true);
+            roomRepository.save(saved.getRoom());
+        }
         auditEventRepository.save(new AuditEvent(
                 AuditEvent.Type.BOOKING, id,
                 AuditEvent.Action.UPDATED));
@@ -149,16 +172,22 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     @Transactional
-    public void deleteBooking(Long id) {
-        bookingRepository.deleteById(id);
+    public void cancelBooking(Long id) {
+        Booking booking = bookingRepository.findById(id)
+                .orElseThrow(() ->
+                        new RuntimeException(
+                                "Bokning hittades inte"));
+        booking.setStatus(BookingStatus.CANCELLED);
+        bookingRepository.save(booking);
         auditEventRepository.save(new AuditEvent(
                 AuditEvent.Type.BOOKING, id,
-                AuditEvent.Action.DELETED));
+                AuditEvent.Action.UPDATED));
     }
 
     @Override
     public boolean customerHasActiveBookings(Long customerId) {
-        return bookingRepository.existsByCustomerId(customerId);
+        return bookingRepository.existsByCustomerIdAndStatusNot(
+                customerId, BookingStatus.CANCELLED);
     }
 
     @Override
