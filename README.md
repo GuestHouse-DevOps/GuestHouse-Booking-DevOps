@@ -47,3 +47,21 @@ Tests start their own MySQL 8.0 container through Testcontainers, so Docker must
 ```
 
 Use JDK 21. Lombok fails to compile on newer JDKs.
+
+## Health Check
+
+The service exposes `/actuator/health` through Spring Boot Actuator.
+
+Railway is connected to this endpoint and continuously checks that the service is running.
+
+Test locally:
+
+```text
+http://localhost:8080/actuator/health
+```
+
+In production:
+
+```text
+https://guesthouse-booking-system-production-87cb.up.railway.app/actuator/health
+```
