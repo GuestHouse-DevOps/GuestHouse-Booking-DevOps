@@ -53,6 +53,11 @@ The service exposes `/actuator/health` through Spring Boot Actuator.
 
 Railway is connected to this endpoint and continuously checks that the service is running.
 
+The response lists each component's status. Besides the database, the
+`customerService` component calls Customer Service's `/api/customers`.
+If Customer Service is unreachable or returns an error, the whole
+endpoint reports `DOWN`.
+
 Test locally:
 
 ```text
