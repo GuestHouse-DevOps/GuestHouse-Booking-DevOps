@@ -3,6 +3,8 @@ package org.nackademin.guesthousebookingsystem.controller;
 import lombok.RequiredArgsConstructor;
 import org.nackademin.guesthousebookingsystem.client.CustomerClient;
 import org.nackademin.guesthousebookingsystem.dto.CustomerDto;
+import org.nackademin.guesthousebookingsystem.entity.AuditEvent;
+import org.nackademin.guesthousebookingsystem.repository.AuditEventRepository;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -16,6 +18,7 @@ import java.util.Collections;
 public class CustomerController {
 
     private final CustomerClient customerClient;
+    private final AuditEventRepository auditEventRepository;
 
     @GetMapping
     public String getCustomers(Model model) {
@@ -48,7 +51,8 @@ public class CustomerController {
     @PostMapping("/save")
     public String saveCustomer(@ModelAttribute CustomerDto customerDto, RedirectAttributes ra) {
         try {
-            customerClient.saveCustomer(customerDto);
+            CustomerDto saved = customerClient.saveCustomer(customerDto);
+            auditEventRepository.save(new AuditEvent(AuditEvent.Type.CUSTOMER, saved != null ? saved.getId() : null, AuditEvent.Action.CREATED));
             ra.addFlashAttribute("success", "Kunden sparades!");
         } catch (RuntimeException e) {
             ra.addFlashAttribute("error", e.getMessage());
@@ -60,6 +64,7 @@ public class CustomerController {
     public String updateCustomer(@PathVariable Long id, @ModelAttribute CustomerDto customerDto, RedirectAttributes ra) {
         try {
             customerClient.updateCustomer(id, customerDto);
+            auditEventRepository.save(new AuditEvent(AuditEvent.Type.CUSTOMER, id, AuditEvent.Action.UPDATED));
             ra.addFlashAttribute("success", "Kunden uppdaterades!");
         } catch (RuntimeException e) {
             ra.addFlashAttribute("error", e.getMessage());
@@ -71,6 +76,7 @@ public class CustomerController {
     public String deleteCustomer(@PathVariable Long id, RedirectAttributes ra) {
         try {
             customerClient.deleteCustomer(id);
+            auditEventRepository.save(new AuditEvent(AuditEvent.Type.CUSTOMER, id, AuditEvent.Action.DELETED));
             ra.addFlashAttribute("success", "Kunden togs bort.");
         } catch (IllegalStateException e) {
             ra.addFlashAttribute("error", e.getMessage());
