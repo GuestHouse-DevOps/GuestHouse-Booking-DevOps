@@ -54,8 +54,8 @@ jobs:
           context: .
           push: true
           tags: |
-            ${{ secrets.DOCKER_USERNAME }}/guesthouse-booking-service:latest
             ${{ secrets.DOCKER_USERNAME }}/guesthouse-booking-service:${{ github.sha }}
+            ${{ github.ref == 'refs/heads/main' && format('{0}/guesthouse-booking-service:latest', secrets.DOCKER_USERNAME) || '' }}
 
   print-production-image:
     name: Print Production Image
