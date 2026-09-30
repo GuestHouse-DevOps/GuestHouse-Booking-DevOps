@@ -1,9 +1,9 @@
 package org.nackademin.guesthousebookingsystem.service;
 
+import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
-import org.nackademin.guesthousebookingsystem.client.CustomerClient;
+import org.junit.jupiter.api.extension.RegisterExtension;
 import org.nackademin.guesthousebookingsystem.dto.BookingDto;
 import org.nackademin.guesthousebookingsystem.dto.RoomDto;
 import org.nackademin.guesthousebookingsystem.entity.Booking;
@@ -11,15 +11,19 @@ import org.nackademin.guesthousebookingsystem.entity.Room;
 import org.nackademin.guesthousebookingsystem.entity.RoomType;
 import org.nackademin.guesthousebookingsystem.repository.BookingRepository;
 import org.nackademin.guesthousebookingsystem.repository.RoomRepository;
+import jakarta.persistence.EntityManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.*;
+import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
@@ -36,8 +40,18 @@ class BookingServiceImplTest {
     @Autowired
     private RoomRepository roomRepository;
 
-    @MockitoBean
-    private CustomerClient customerClient;
+    @Autowired
+    private EntityManager entityManager;
+
+    @RegisterExtension
+    static WireMockExtension customerService = WireMockExtension.newInstance()
+            .options(wireMockConfig().dynamicPort())
+            .build();
+
+    @DynamicPropertySource
+    static void customerServiceUrl(DynamicPropertyRegistry registry) {
+        registry.add("customer.service.url", customerService::baseUrl);
+    }
 
     private final Long customerId = 1L;
     private Room savedRoom;
@@ -45,7 +59,10 @@ class BookingServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        Mockito.when(customerClient.customerExists(Mockito.anyLong())).thenReturn(true);
+        customerService.stubFor(get(urlPathMatching("/api/customers/\\d+"))
+                .willReturn(okJson("""
+                        {"id": 1, "name": "Anna Andersson", "email": "anna@example.com", "phoneNumber": "0701234567"}
+                        """)));
 
         Room room = new Room(null, 101, RoomType.DOUBLE, 1);
         savedRoom = roomRepository.save(room);
@@ -90,6 +107,25 @@ class BookingServiceImplTest {
     }
 
     @Test
+    void saveBooking_shouldFailWhenCustomerDoesNotExist() {
+        customerService.stubFor(get("/api/customers/99").willReturn(notFound()));
+        RoomDto roomDto = new RoomDto(savedRoom.getId(), 101, RoomType.DOUBLE, 1);
+
+        BookingDto booking = new BookingDto(null, 99L, null, roomDto,
+                LocalDate.of(2026, 6, 10),
+                LocalDate.of(2026, 6, 15));
+
+        RuntimeException e = assertThrows(RuntimeException.class, () -> bookingService.saveBooking(booking));
+        assertEquals("Kund med id 99 hittades inte", e.getMessage());
+    }
+
+    @Test
+    void getBookingById_shouldIncludeCustomerNameFromCustomerService() {
+        BookingDto result = bookingService.getBookingById(savedBooking.getId());
+        assertEquals("Anna Andersson", result.getCustomerName());
+    }
+
+    @Test
     void saveBooking_shouldFailWhenCheckoutBeforeCheckin() {
         RoomDto roomDto = new RoomDto(savedRoom.getId(), 101, RoomType.DOUBLE, 1);
 
@@ -116,6 +152,27 @@ class BookingServiceImplTest {
 
         BookingDto result = bookingService.updateBooking(savedBooking.getId(), updateInfo);
         assertEquals(LocalDate.of(2026, 7, 2), result.getStartDate());
+    }
+
+    @Test
+    void updateBooking_shouldKeepCreatedAtAndSetUpdatedAt() {
+        entityManager.flush();
+        entityManager.clear();
+        Booking before = bookingRepository.findById(savedBooking.getId()).orElseThrow();
+        assertNotNull(before.getCreatedAt());
+        entityManager.clear();
+
+        RoomDto roomDto = new RoomDto(savedRoom.getId(), 101, RoomType.DOUBLE, 1);
+        BookingDto updateInfo = new BookingDto(null, customerId, null, roomDto,
+                LocalDate.of(2026, 7, 2),
+                LocalDate.of(2026, 7, 6));
+        bookingService.updateBooking(savedBooking.getId(), updateInfo);
+        entityManager.flush();
+        entityManager.clear();
+
+        Booking after = bookingRepository.findById(savedBooking.getId()).orElseThrow();
+        assertEquals(before.getCreatedAt(), after.getCreatedAt());
+        assertFalse(after.getUpdatedAt().isBefore(before.getUpdatedAt()));
     }
 
     @Test

@@ -39,3 +39,11 @@ ORDER BY occurred_at DESC;
 ```
 
 Customer events are written by this service after Customer Service confirms the change.
+## Running Tests
+Tests start their own MySQL 8.0 container through Testcontainers, so Docker must be running. No database or environment variables are needed.
+
+```bash
+./mvnw test
+```
+
+Use JDK 21. Lombok fails to compile on newer JDKs.
