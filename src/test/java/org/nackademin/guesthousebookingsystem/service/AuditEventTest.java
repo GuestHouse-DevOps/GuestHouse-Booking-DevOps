@@ -55,7 +55,7 @@ class AuditEventTest {
                 .willReturn(okJson("""
                         {"id": 1, "name": "Anna Andersson", "email": "anna@example.com", "phoneNumber": "0701234567"}
                         """)));
-        room = roomService.saveRoom(new RoomDto(null, 201, RoomType.DOUBLE, 0));
+        room = roomService.saveRoom(new RoomDto(null, 201, RoomType.DOUBLE, 0, false));
     }
 
     @Test

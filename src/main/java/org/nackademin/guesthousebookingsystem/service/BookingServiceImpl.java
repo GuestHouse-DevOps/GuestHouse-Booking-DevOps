@@ -31,7 +31,8 @@ public class BookingServiceImpl implements BookingService {
                 booking.getRoom().getId(),
                 booking.getRoom().getRoomNumber(),
                 booking.getRoom().getRoomType(),
-                booking.getRoom().getExtraBeds()
+                booking.getRoom().getExtraBeds(),
+                booking.getRoom().isDirty()
         );
 
         String customerName = "Kund-id: "
@@ -127,8 +128,12 @@ public class BookingServiceImpl implements BookingService {
                             + " hittades inte");
         }
         checkConflicts(bookingDto, -1L);
-        Booking saved = bookingRepository.save(
-                toEntity(bookingDto));
+        Booking booking = toEntity(bookingDto);
+        if (booking.getRoom().isDirty()) {
+            throw new IllegalStateException(
+                    "Rummet måste städas innan det kan bokas");
+        }
+        Booking saved = bookingRepository.save(booking);
         auditEventRepository.save(new AuditEvent(
                 AuditEvent.Type.BOOKING, saved.getId(),
                 AuditEvent.Action.CREATED));
@@ -147,8 +152,18 @@ public class BookingServiceImpl implements BookingService {
         }
         bookingDto.setId(id);
         checkConflicts(bookingDto, id);
+        BookingStatus previousStatus = bookingRepository.findById(id)
+                .orElseThrow(() ->
+                        new RuntimeException(
+                                "Bokning hittades inte"))
+                .getStatus();
         Booking saved = bookingRepository.save(
                 toEntity(bookingDto));
+        if (saved.getStatus() == BookingStatus.CHECKED_OUT
+                && previousStatus != BookingStatus.CHECKED_OUT) {
+            saved.getRoom().setDirty(true);
+            roomRepository.save(saved.getRoom());
+        }
         auditEventRepository.save(new AuditEvent(
                 AuditEvent.Type.BOOKING, id,
                 AuditEvent.Action.UPDATED));

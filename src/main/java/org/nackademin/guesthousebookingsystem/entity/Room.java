@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.ColumnDefault;
 
 @Entity
 @Data
@@ -27,4 +28,8 @@ public class Room extends Timestamped {
 
     @Min(0)
     private int extraBeds;
+
+    @Column(nullable = false)
+    @ColumnDefault("false")
+    private boolean dirty;
 }

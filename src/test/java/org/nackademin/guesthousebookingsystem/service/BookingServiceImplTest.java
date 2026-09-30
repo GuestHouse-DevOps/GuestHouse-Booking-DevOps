@@ -65,7 +65,7 @@ class BookingServiceImplTest {
                         {"id": 1, "name": "Anna Andersson", "email": "anna@example.com", "phoneNumber": "0701234567"}
                         """)));
 
-        Room room = new Room(null, 101, RoomType.DOUBLE, 1);
+        Room room = new Room(null, 101, RoomType.DOUBLE, 1, false);
         savedRoom = roomRepository.save(room);
 
         Booking booking = new Booking(null, customerId, savedRoom,
@@ -85,7 +85,7 @@ class BookingServiceImplTest {
 
     @Test
     void saveBooking_shouldSaveWhenDatesAreFree() {
-        RoomDto roomDto = new RoomDto(savedRoom.getId(), 101, RoomType.DOUBLE, 1);
+        RoomDto roomDto = new RoomDto(savedRoom.getId(), 101, RoomType.DOUBLE, 1, false);
 
         BookingDto newBooking = new BookingDto(null, customerId, null, roomDto,
                 LocalDate.of(2026, 6, 10),
@@ -99,7 +99,7 @@ class BookingServiceImplTest {
 
     @Test
     void saveBooking_shouldThrowExceptionWhenDatesOverlap() {
-        RoomDto roomDto = new RoomDto(savedRoom.getId(), 101, RoomType.DOUBLE, 1);
+        RoomDto roomDto = new RoomDto(savedRoom.getId(), 101, RoomType.DOUBLE, 1, false);
 
         BookingDto overlappingBooking = new BookingDto(null, customerId, null, roomDto,
                 LocalDate.of(2026, 6, 3),
@@ -111,7 +111,7 @@ class BookingServiceImplTest {
     @Test
     void saveBooking_shouldFailWhenCustomerDoesNotExist() {
         customerService.stubFor(get("/api/customers/99").willReturn(notFound()));
-        RoomDto roomDto = new RoomDto(savedRoom.getId(), 101, RoomType.DOUBLE, 1);
+        RoomDto roomDto = new RoomDto(savedRoom.getId(), 101, RoomType.DOUBLE, 1, false);
 
         BookingDto booking = new BookingDto(null, 99L, null, roomDto,
                 LocalDate.of(2026, 6, 10),
@@ -129,7 +129,7 @@ class BookingServiceImplTest {
 
     @Test
     void saveBooking_shouldFailWhenCheckoutBeforeCheckin() {
-        RoomDto roomDto = new RoomDto(savedRoom.getId(), 101, RoomType.DOUBLE, 1);
+        RoomDto roomDto = new RoomDto(savedRoom.getId(), 101, RoomType.DOUBLE, 1, false);
 
         BookingDto invalidBooking = new BookingDto(null, customerId, null, roomDto,
                 LocalDate.of(2026, 6, 10),
@@ -146,7 +146,7 @@ class BookingServiceImplTest {
 
     @Test
     void updateBooking_shouldUpdateExistingBooking() {
-        RoomDto roomDto = new RoomDto(savedRoom.getId(), 101, RoomType.DOUBLE, 1);
+        RoomDto roomDto = new RoomDto(savedRoom.getId(), 101, RoomType.DOUBLE, 1, false);
 
         BookingDto updateInfo = new BookingDto(null, customerId, null, roomDto,
                 LocalDate.of(2026, 7, 2),
@@ -164,7 +164,7 @@ class BookingServiceImplTest {
         assertNotNull(before.getCreatedAt());
         entityManager.clear();
 
-        RoomDto roomDto = new RoomDto(savedRoom.getId(), 101, RoomType.DOUBLE, 1);
+        RoomDto roomDto = new RoomDto(savedRoom.getId(), 101, RoomType.DOUBLE, 1, false);
         BookingDto updateInfo = new BookingDto(null, customerId, null, roomDto,
                 LocalDate.of(2026, 7, 2),
                 LocalDate.of(2026, 7, 6), null);
@@ -185,10 +185,34 @@ class BookingServiceImplTest {
                 bookingRepository.findById(savedBooking.getId()).orElseThrow().getStatus());
         assertFalse(bookingService.customerHasActiveBookings(customerId));
 
-        RoomDto roomDto = new RoomDto(savedRoom.getId(), 101, RoomType.DOUBLE, 1);
+        RoomDto roomDto = new RoomDto(savedRoom.getId(), 101, RoomType.DOUBLE, 1, false);
         BookingDto sameDates = new BookingDto(null, customerId, null, roomDto,
                 LocalDate.of(2026, 6, 1),
                 LocalDate.of(2026, 6, 5), null);
         assertNotNull(bookingService.saveBooking(sameDates).getId());
+    }
+
+    @Test
+    void updateBooking_checkOutShouldMarkRoomDirty() {
+        RoomDto roomDto = new RoomDto(savedRoom.getId(), 101, RoomType.DOUBLE, 1, false);
+        BookingDto checkOut = new BookingDto(null, customerId, null, roomDto,
+                LocalDate.of(2026, 6, 1),
+                LocalDate.of(2026, 6, 5), BookingStatus.CHECKED_OUT);
+
+        bookingService.updateBooking(savedBooking.getId(), checkOut);
+
+        assertTrue(roomRepository.findById(savedRoom.getId()).orElseThrow().isDirty());
+    }
+
+    @Test
+    void saveBooking_shouldFailWhenRoomIsDirty() {
+        savedRoom.setDirty(true);
+        roomRepository.save(savedRoom);
+        RoomDto roomDto = new RoomDto(savedRoom.getId(), 101, RoomType.DOUBLE, 1, true);
+        BookingDto booking = new BookingDto(null, customerId, null, roomDto,
+                LocalDate.of(2026, 6, 10),
+                LocalDate.of(2026, 6, 15), null);
+
+        assertThrows(IllegalStateException.class, () -> bookingService.saveBooking(booking));
     }
 }

@@ -36,7 +36,7 @@ class RoomServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        Room room = new Room(null, 101, RoomType.DOUBLE, 1);
+        Room room = new Room(null, 101, RoomType.DOUBLE, 1, false);
         savedRoom = roomRepository.save(room);
     }
 
@@ -58,7 +58,7 @@ class RoomServiceImplTest {
 
     @Test
     void saveRoom_shouldReturnSavedRoom() {
-        RoomDto newRoom = new RoomDto(null, 102, RoomType.SINGLE, 0);
+        RoomDto newRoom = new RoomDto(null, 102, RoomType.SINGLE, 0, false);
 
         RoomDto result = roomService.saveRoom(newRoom);
 
@@ -77,13 +77,13 @@ class RoomServiceImplTest {
 
     @Test
     void saveRoom_shouldThrowWhenRoomNumberBelowOne() {
-        RoomDto invalidRoom = new RoomDto(null, 0, RoomType.SINGLE, 0);
+        RoomDto invalidRoom = new RoomDto(null, 0, RoomType.SINGLE, 0, false);
         assertThrows(IllegalArgumentException.class, () -> roomService.saveRoom(invalidRoom));
     }
 
     @Test
     void saveRoom_shouldThrowWhenRoomNumberAlreadyExists() {
-        RoomDto duplicate = new RoomDto(null, 101, RoomType.SINGLE, 0);
+        RoomDto duplicate = new RoomDto(null, 101, RoomType.SINGLE, 0, false);
         assertThrows(IllegalArgumentException.class, () -> roomService.saveRoom(duplicate));
     }
 
@@ -100,7 +100,7 @@ class RoomServiceImplTest {
 
     @Test
     void updateRoom_shouldUpdateExistingRoom() {
-        RoomDto updateInfo = new RoomDto(null, 101, RoomType.DOUBLE, 2);
+        RoomDto updateInfo = new RoomDto(null, 101, RoomType.DOUBLE, 2, false);
 
         RoomDto result = roomService.updateRoom(savedRoom.getId(), updateInfo);
 
@@ -112,5 +112,17 @@ class RoomServiceImplTest {
         roomService.deleteRoom(savedRoom.getId());
 
         assertEquals(0, roomRepository.findAll().size());
+    }
+
+    @Test
+    void findAvailableRooms_shouldSkipDirtyRooms() {
+        savedRoom.setDirty(true);
+        roomRepository.save(savedRoom);
+
+        List<RoomDto> result = roomService.findAvailableRooms(
+                LocalDate.of(2026, 7, 1),
+                LocalDate.of(2026, 7, 5),
+                1);
+        assertTrue(result.isEmpty());
     }
 }
