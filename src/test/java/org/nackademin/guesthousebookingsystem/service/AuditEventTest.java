@@ -1,9 +1,9 @@
 package org.nackademin.guesthousebookingsystem.service;
 
+import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
-import org.nackademin.guesthousebookingsystem.client.CustomerClient;
+import org.junit.jupiter.api.extension.RegisterExtension;
 import org.nackademin.guesthousebookingsystem.dto.BookingDto;
 import org.nackademin.guesthousebookingsystem.dto.RoomDto;
 import org.nackademin.guesthousebookingsystem.entity.AuditEvent;
@@ -12,12 +12,15 @@ import org.nackademin.guesthousebookingsystem.repository.AuditEventRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.*;
+import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
@@ -34,14 +37,24 @@ class AuditEventTest {
     @Autowired
     private AuditEventRepository auditEventRepository;
 
-    @MockitoBean
-    private CustomerClient customerClient;
+    @RegisterExtension
+    static WireMockExtension customerService = WireMockExtension.newInstance()
+            .options(wireMockConfig().dynamicPort())
+            .build();
+
+    @DynamicPropertySource
+    static void customerServiceUrl(DynamicPropertyRegistry registry) {
+        registry.add("customer.service.url", customerService::baseUrl);
+    }
 
     private RoomDto room;
 
     @BeforeEach
     void setUp() {
-        Mockito.when(customerClient.customerExists(Mockito.anyLong())).thenReturn(true);
+        customerService.stubFor(get(urlPathMatching("/api/customers/\\d+"))
+                .willReturn(okJson("""
+                        {"id": 1, "name": "Anna Andersson", "email": "anna@example.com", "phoneNumber": "0701234567"}
+                        """)));
         room = roomService.saveRoom(new RoomDto(null, 201, RoomType.DOUBLE, 0));
     }
 
