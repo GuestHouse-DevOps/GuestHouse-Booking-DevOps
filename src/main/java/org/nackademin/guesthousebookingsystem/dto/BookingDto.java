@@ -3,6 +3,7 @@ package org.nackademin.guesthousebookingsystem.dto;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.nackademin.guesthousebookingsystem.entity.BookingStatus;
 
 import java.time.LocalDate;
 
@@ -17,4 +18,5 @@ public class BookingDto {
     private RoomDto room;
     private LocalDate startDate;
     private LocalDate endDate;
+    private BookingStatus status;
 }

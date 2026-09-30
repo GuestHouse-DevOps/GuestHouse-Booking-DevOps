@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.nackademin.guesthousebookingsystem.client.CustomerClient;
 import org.nackademin.guesthousebookingsystem.dto.BookingDto;
 import org.nackademin.guesthousebookingsystem.dto.RoomDto;
+import org.nackademin.guesthousebookingsystem.entity.BookingStatus;
 import org.nackademin.guesthousebookingsystem.service.BookingService;
 import org.nackademin.guesthousebookingsystem.service.RoomService;
 import org.springframework.http.ResponseEntity;
@@ -24,6 +25,7 @@ public class BookingController {
     private void populateModel(Model model) {
         model.addAttribute("bookings", bookingService.getAllBookings());
         model.addAttribute("rooms", roomService.getAllRooms());
+        model.addAttribute("statuses", BookingStatus.values());
         try {
             model.addAttribute("customers", customerClient.getAllCustomers());
         } catch (RuntimeException e) {
@@ -72,13 +74,13 @@ public class BookingController {
         return "redirect:/bookings";
     }
 
-    @GetMapping("/delete/{id}")
-    public String deleteBooking(@PathVariable Long id, RedirectAttributes ra) {
+    @GetMapping("/cancel/{id}")
+    public String cancelBooking(@PathVariable Long id, RedirectAttributes ra) {
         try {
-            bookingService.deleteBooking(id);
+            bookingService.cancelBooking(id);
             ra.addFlashAttribute("success", "Bokning avbokad.");
         } catch (Exception e) {
-            ra.addFlashAttribute("error", "Bokningen kunde inte tas bort.");
+            ra.addFlashAttribute("error", "Bokningen kunde inte avbokas.");
         }
         return "redirect:/bookings";
     }

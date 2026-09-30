@@ -3,6 +3,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.nackademin.guesthousebookingsystem.dto.RoomDto;
 import org.nackademin.guesthousebookingsystem.entity.Booking;
+import org.nackademin.guesthousebookingsystem.entity.BookingStatus;
 import org.nackademin.guesthousebookingsystem.entity.Room;
 import org.nackademin.guesthousebookingsystem.entity.RoomType;
 import org.nackademin.guesthousebookingsystem.repository.BookingRepository;
@@ -91,7 +92,8 @@ class RoomServiceImplTest {
         Long customerId = 1L;
         Booking booking = new Booking(null, customerId, savedRoom,
                 LocalDate.of(2026, 6, 1),
-                LocalDate.of(2026, 6, 5));
+                LocalDate.of(2026, 6, 5),
+                BookingStatus.CONFIRMED);
         bookingRepository.save(booking);
         assertThrows(IllegalStateException.class, () -> roomService.deleteRoom(savedRoom.getId()));
     }

@@ -59,12 +59,12 @@ class AuditEventTest {
     }
 
     @Test
-    void bookingLifecycle_shouldRecordCreatedUpdatedDeleted() {
+    void bookingLifecycle_shouldRecordCreatedAndUpdated() {
         BookingDto booking = bookingService.saveBooking(new BookingDto(null, 1L, null, room,
-                LocalDate.of(2026, 8, 1), LocalDate.of(2026, 8, 3)));
+                LocalDate.of(2026, 8, 1), LocalDate.of(2026, 8, 3), null));
         bookingService.updateBooking(booking.getId(), new BookingDto(null, 1L, null, room,
-                LocalDate.of(2026, 8, 2), LocalDate.of(2026, 8, 4)));
-        bookingService.deleteBooking(booking.getId());
+                LocalDate.of(2026, 8, 2), LocalDate.of(2026, 8, 4), null));
+        bookingService.cancelBooking(booking.getId());
 
         List<AuditEvent.Action> actions = auditEventRepository
                 .findByEntityTypeAndEntityIdOrderByOccurredAtDesc(AuditEvent.Type.BOOKING, booking.getId())
@@ -72,7 +72,7 @@ class AuditEventTest {
 
         assertEquals(3, actions.size());
         assertTrue(actions.containsAll(List.of(
-                AuditEvent.Action.CREATED, AuditEvent.Action.UPDATED, AuditEvent.Action.DELETED)));
+                AuditEvent.Action.CREATED, AuditEvent.Action.UPDATED)));
     }
 
     @Test
@@ -91,7 +91,7 @@ class AuditEventTest {
 
         assertThrows(IllegalArgumentException.class, () -> bookingService.saveBooking(
                 new BookingDto(null, 1L, null, room,
-                        LocalDate.of(2026, 8, 5), LocalDate.of(2026, 8, 1))));
+                        LocalDate.of(2026, 8, 5), LocalDate.of(2026, 8, 1), null)));
 
         assertEquals(before, auditEventRepository.count());
     }

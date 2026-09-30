@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.ColumnDefault;
 
 import java.time.LocalDate;
 
@@ -26,4 +27,9 @@ public class Booking extends Timestamped {
     private LocalDate startDate;
 
     private LocalDate endDate;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    @ColumnDefault("'CONFIRMED'")
+    private BookingStatus status = BookingStatus.CONFIRMED;
 }

@@ -7,6 +7,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import org.nackademin.guesthousebookingsystem.dto.BookingDto;
 import org.nackademin.guesthousebookingsystem.dto.RoomDto;
 import org.nackademin.guesthousebookingsystem.entity.Booking;
+import org.nackademin.guesthousebookingsystem.entity.BookingStatus;
 import org.nackademin.guesthousebookingsystem.entity.Room;
 import org.nackademin.guesthousebookingsystem.entity.RoomType;
 import org.nackademin.guesthousebookingsystem.repository.BookingRepository;
@@ -69,7 +70,8 @@ class BookingServiceImplTest {
 
         Booking booking = new Booking(null, customerId, savedRoom,
                 LocalDate.of(2026, 6, 1),
-                LocalDate.of(2026, 6, 5));
+                LocalDate.of(2026, 6, 5),
+                BookingStatus.CONFIRMED);
         savedBooking = bookingRepository.save(booking);
     }
 
@@ -87,7 +89,7 @@ class BookingServiceImplTest {
 
         BookingDto newBooking = new BookingDto(null, customerId, null, roomDto,
                 LocalDate.of(2026, 6, 10),
-                LocalDate.of(2026, 6, 15));
+                LocalDate.of(2026, 6, 15), null);
 
         BookingDto result = bookingService.saveBooking(newBooking);
 
@@ -101,7 +103,7 @@ class BookingServiceImplTest {
 
         BookingDto overlappingBooking = new BookingDto(null, customerId, null, roomDto,
                 LocalDate.of(2026, 6, 3),
-                LocalDate.of(2026, 6, 8));
+                LocalDate.of(2026, 6, 8), null);
 
         assertThrows(IllegalStateException.class, () -> bookingService.saveBooking(overlappingBooking));
     }
@@ -113,7 +115,7 @@ class BookingServiceImplTest {
 
         BookingDto booking = new BookingDto(null, 99L, null, roomDto,
                 LocalDate.of(2026, 6, 10),
-                LocalDate.of(2026, 6, 15));
+                LocalDate.of(2026, 6, 15), null);
 
         RuntimeException e = assertThrows(RuntimeException.class, () -> bookingService.saveBooking(booking));
         assertEquals("Kund med id 99 hittades inte", e.getMessage());
@@ -131,7 +133,7 @@ class BookingServiceImplTest {
 
         BookingDto invalidBooking = new BookingDto(null, customerId, null, roomDto,
                 LocalDate.of(2026, 6, 10),
-                LocalDate.of(2026, 6, 5));
+                LocalDate.of(2026, 6, 5), null);
 
         assertThrows(IllegalArgumentException.class, () -> bookingService.saveBooking(invalidBooking));
     }
@@ -148,7 +150,7 @@ class BookingServiceImplTest {
 
         BookingDto updateInfo = new BookingDto(null, customerId, null, roomDto,
                 LocalDate.of(2026, 7, 2),
-                LocalDate.of(2026, 7, 6));
+                LocalDate.of(2026, 7, 6), null);
 
         BookingDto result = bookingService.updateBooking(savedBooking.getId(), updateInfo);
         assertEquals(LocalDate.of(2026, 7, 2), result.getStartDate());
@@ -165,7 +167,7 @@ class BookingServiceImplTest {
         RoomDto roomDto = new RoomDto(savedRoom.getId(), 101, RoomType.DOUBLE, 1);
         BookingDto updateInfo = new BookingDto(null, customerId, null, roomDto,
                 LocalDate.of(2026, 7, 2),
-                LocalDate.of(2026, 7, 6));
+                LocalDate.of(2026, 7, 6), null);
         bookingService.updateBooking(savedBooking.getId(), updateInfo);
         entityManager.flush();
         entityManager.clear();
@@ -176,9 +178,17 @@ class BookingServiceImplTest {
     }
 
     @Test
-    void deleteBooking_shouldDeleteSuccessfully() {
-        bookingService.deleteBooking(savedBooking.getId());
+    void cancelBooking_shouldKeepBookingAndReleaseRoom() {
+        bookingService.cancelBooking(savedBooking.getId());
 
-        assertEquals(0, bookingRepository.findAll().size());
+        assertEquals(BookingStatus.CANCELLED,
+                bookingRepository.findById(savedBooking.getId()).orElseThrow().getStatus());
+        assertFalse(bookingService.customerHasActiveBookings(customerId));
+
+        RoomDto roomDto = new RoomDto(savedRoom.getId(), 101, RoomType.DOUBLE, 1);
+        BookingDto sameDates = new BookingDto(null, customerId, null, roomDto,
+                LocalDate.of(2026, 6, 1),
+                LocalDate.of(2026, 6, 5), null);
+        assertNotNull(bookingService.saveBooking(sameDates).getId());
     }
 }
