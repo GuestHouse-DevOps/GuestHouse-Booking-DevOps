@@ -1,4 +1,4 @@
-package org.nackademin.guesthousebookingsystem.client;
+package org.nackademin.guesthousebookingsystem.health;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -20,20 +20,29 @@ class CustomerServiceHealthIndicatorTest {
     void setUp() {
         RestClient.Builder builder = RestClient.builder();
         server = MockRestServiceServer.bindTo(builder).build();
-        indicator = new CustomerServiceHealthIndicator(builder.build(), "http://customers");
+        indicator = new CustomerServiceHealthIndicator(
+                builder.build(),
+                "http://customers"
+        );
     }
 
     @Test
     void upWhenCustomerServiceResponds() {
-        server.expect(requestTo("http://customers/api/customers")).andRespond(withSuccess());
+        server.expect(
+                requestTo("http://customers/api/customers")
+        ).andRespond(withSuccess());
 
-        assertThat(indicator.health().getStatus()).isEqualTo(Status.UP);
+        assertThat(indicator.health().getStatus())
+                .isEqualTo(Status.UP);
     }
 
     @Test
     void downWhenCustomerServiceFails() {
-        server.expect(requestTo("http://customers/api/customers")).andRespond(withServerError());
+        server.expect(
+                requestTo("http://customers/api/customers")
+        ).andRespond(withServerError());
 
-        assertThat(indicator.health().getStatus()).isEqualTo(Status.DOWN);
+        assertThat(indicator.health().getStatus())
+                .isEqualTo(Status.DOWN);
     }
 }
