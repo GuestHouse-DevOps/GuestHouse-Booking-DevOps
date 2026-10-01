@@ -8,7 +8,7 @@ import org.springframework.boot.health.contributor.HealthIndicator;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
-@Component
+@Component("customerService")
 public class CustomerServiceHealthIndicator
         implements HealthIndicator {
 
@@ -20,7 +20,7 @@ public class CustomerServiceHealthIndicator
 
     public CustomerServiceHealthIndicator(
             RestClient restClient,
-            @Value("${customer.service.url:http://localhost:8081}")
+            @Value("${customer.service.url}")
             String customerServiceUrl) {
         this.restClient = restClient;
         this.customerServiceUrl = customerServiceUrl;
@@ -41,7 +41,6 @@ public class CustomerServiceHealthIndicator
 
             return Health.up()
                     .withDetail("customerService", "UP")
-                    .withDetail("url", customerServiceUrl)
                     .build();
 
         } catch (Exception e) {
@@ -49,11 +48,7 @@ public class CustomerServiceHealthIndicator
                     e.getMessage());
 
             return Health.down()
-                    .withDetail("customerService", "UNAVAILABLE")
-                    .withDetail("url", customerServiceUrl)
-                    .withDetail("note",
-                            "Customer service is down but "
-                                    + "booking service is still operational")
+                    .withDetail("customerService", "DOWN")
                     .build();
         }
     }
