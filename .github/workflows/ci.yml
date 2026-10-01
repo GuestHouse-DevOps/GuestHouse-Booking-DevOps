@@ -18,6 +18,9 @@ on:
           - 'true'
           - 'false'
 
+permissions:
+  contents: read
+
 jobs:
   build:
     name: Test and Build
