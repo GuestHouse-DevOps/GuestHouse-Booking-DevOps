@@ -45,7 +45,51 @@ A ruleset on GitHub protects `main`. Nobody can push to it directly, force-push,
 6. Railway watches `main` and deploys the merge commit to both the `staging` and `production` environments. The deployment shows up under Deployments on the GitHub repository.
 7. Check that the service is up at https://guesthouse-booking-system-production-87cb.up.railway.app/actuator/health.
 
-To roll back, revert the merge commit in a new PR. It goes through the same steps.
+To undo a release, see [Rollback](#rollback).
+
+## Rollback
+
+Railway builds production from `main`, so a rollback on Railway means changing `main`. Every image CI pushes is also on Docker Hub, tagged with its commit SHA, so you can run any earlier version as a container.
+
+### Option 1: revert the last commit
+
+Revert the latest commit on `main` and push the revert through a pull request, since nobody can push to `main` directly:
+
+```bash
+git switch main
+git pull
+git switch -c fix/revert-bad-release
+git revert HEAD          # for a merge commit: git revert -m 1 HEAD
+git push -u origin fix/revert-bad-release
+```
+
+Open a PR against `main`. Once it is merged, CI builds a new image and Railway deploys the reverted code to staging and production.
+
+### Option 2: run a specific version from Docker Hub
+
+Images live at https://hub.docker.com/r/marufmulk/guesthouse-booking-service/tags. Each tag is the full SHA of a commit on `main`, and `latest` points to the newest one. Find the SHA of the last good release:
+
+```bash
+git log --oneline main
+```
+
+Then pull and run that image:
+
+```bash
+docker pull marufmulk/guesthouse-booking-service:<commit-sha>
+docker run -p 8080:8080 \
+  -e SPRING_DATASOURCE_URL=jdbc:mysql://<host>:3306/<database> \
+  -e SPRING_DATASOURCE_USERNAME=<user> \
+  -e SPRING_DATASOURCE_PASSWORD=<password> \
+  -e CUSTOMER_SERVICE_URL=<customer-service-url> \
+  marufmulk/guesthouse-booking-service:<commit-sha>
+```
+
+The container needs a MySQL database and a running Customer Service, so pass their addresses as above.
+
+To use it with Docker Compose, set `image: marufmulk/guesthouse-booking-service:<commit-sha>` for the booking service in `GuestHouse-Infrastructure/docker-compose.yml`.
+
+This does not change what Railway runs. Production only moves back when `main` does, through option 1.
 
 ## Repository Structure Note for Docker Compose
 For `docker compose up --build` to locate all service directories correctly using the relative build contexts, ensure that both repositories (`GuestHouse-Booking-System`, `GuestHouse-Customer-Service`) and your infrastructure repository (`GuestHouse-Infrastructure`) are placed within the same parent folder like this:
