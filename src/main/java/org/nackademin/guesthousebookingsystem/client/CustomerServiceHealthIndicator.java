@@ -1,5 +1,7 @@
 package org.nackademin.guesthousebookingsystem.client;
 
+import java.time.Duration;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.health.contributor.Health;
 import org.springframework.boot.health.contributor.HealthIndicator;
@@ -20,14 +22,23 @@ public class CustomerServiceHealthIndicator implements HealthIndicator {
 
     @Override
     public Health health() {
+        long start = System.nanoTime();
         try {
             restClient.get()
                     .uri(customerServiceUrl + "/api/customers")
                     .retrieve()
                     .toBodilessEntity();
-            return Health.up().build();
+            return Health.up()
+                    .withDetail("latencyMs", elapsedMillis(start))
+                    .build();
         } catch (Exception e) {
-            return Health.down(e).build();
+            return Health.down(e)
+                    .withDetail("latencyMs", elapsedMillis(start))
+                    .build();
         }
+    }
+
+    private static long elapsedMillis(long start) {
+        return Duration.ofNanos(System.nanoTime() - start).toMillis();
     }
 }
