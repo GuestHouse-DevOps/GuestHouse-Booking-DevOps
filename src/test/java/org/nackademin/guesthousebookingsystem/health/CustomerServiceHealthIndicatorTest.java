@@ -2,6 +2,7 @@ package org.nackademin.guesthousebookingsystem.health;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.boot.health.contributor.Health;
 import org.springframework.boot.health.contributor.Status;
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestClient;
@@ -32,8 +33,10 @@ class CustomerServiceHealthIndicatorTest {
                 requestTo("http://customers/api/customers")
         ).andRespond(withSuccess());
 
-        assertThat(indicator.health().getStatus())
-                .isEqualTo(Status.UP);
+        Health health = indicator.health();
+
+        assertThat(health.getStatus()).isEqualTo(Status.UP);
+        assertThat(health.getDetails()).containsKey("latencyMs");
     }
 
     @Test
@@ -42,7 +45,9 @@ class CustomerServiceHealthIndicatorTest {
                 requestTo("http://customers/api/customers")
         ).andRespond(withServerError());
 
-        assertThat(indicator.health().getStatus())
-                .isEqualTo(Status.DOWN);
+        Health health = indicator.health();
+
+        assertThat(health.getStatus()).isEqualTo(Status.DOWN);
+        assertThat(health.getDetails()).containsKey("latencyMs");
     }
 }
