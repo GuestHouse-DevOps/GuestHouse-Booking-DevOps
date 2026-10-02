@@ -45,7 +45,7 @@ public class CustomerServiceHealthIndicator
 
             return Health.up()
                     .withDetail("customerService", "UP")
-                    .withDetail("responseTimeMs", elapsedMillis(start))
+                    .withDetail("latencyMs", elapsedMillis(start))
                     .build();
 
         } catch (Exception e) {
@@ -54,7 +54,7 @@ public class CustomerServiceHealthIndicator
 
             return Health.down()
                     .withDetail("customerService", "DOWN")
-                    .withDetail("responseTimeMs", elapsedMillis(start))
+                    .withDetail("latencyMs", elapsedMillis(start))
                     .build();
         }
     }
