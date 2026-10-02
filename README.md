@@ -131,6 +131,9 @@ The response lists each component's status. Besides the database, the
 If Customer Service is unreachable or returns an error, the whole
 endpoint reports `DOWN`.
 
+The `customerService` details include `responseTimeMs`, the elapsed check time
+in milliseconds, for both successful and failed checks.
+
 Test locally:
 
 ```text
