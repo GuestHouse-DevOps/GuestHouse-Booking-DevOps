@@ -36,7 +36,7 @@ class CustomerServiceHealthIndicatorTest {
         Health health = indicator.health();
 
         assertThat(health.getStatus()).isEqualTo(Status.UP);
-        assertThat(health.getDetails()).containsKey("latencyMs");
+        assertThat(health.getDetails()).containsKey("responseTimeMs");
     }
 
     @Test
@@ -48,6 +48,6 @@ class CustomerServiceHealthIndicatorTest {
         Health health = indicator.health();
 
         assertThat(health.getStatus()).isEqualTo(Status.DOWN);
-        assertThat(health.getDetails()).containsKey("latencyMs");
+        assertThat(health.getDetails()).containsKey("responseTimeMs");
     }
 }

@@ -31,8 +31,9 @@ public class CustomerServiceHealthIndicator
     @Override
     public Health health() {
         long start = System.nanoTime();
+
         try {
-            log.info("Checking health of customer service "
+            log.info("Checking customer service health "
                     + "at {}", customerServiceUrl);
 
             restClient.get()
@@ -40,20 +41,20 @@ public class CustomerServiceHealthIndicator
                     .retrieve()
                     .toBodilessEntity();
 
-            log.info("Customer service is UP");
+            log.info("Customer service health check passed");
 
             return Health.up()
                     .withDetail("customerService", "UP")
-                    .withDetail("latencyMs", elapsedMillis(start))
+                    .withDetail("responseTimeMs", elapsedMillis(start))
                     .build();
 
         } catch (Exception e) {
-            log.warn("Customer service is not reachable: {}",
+            log.warn("Customer service health check failed: {}",
                     e.getMessage());
 
             return Health.down()
                     .withDetail("customerService", "DOWN")
-                    .withDetail("latencyMs", elapsedMillis(start))
+                    .withDetail("responseTimeMs", elapsedMillis(start))
                     .build();
         }
     }
