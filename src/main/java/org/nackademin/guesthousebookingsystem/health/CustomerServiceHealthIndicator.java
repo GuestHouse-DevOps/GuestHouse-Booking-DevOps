@@ -1,5 +1,7 @@
 package org.nackademin.guesthousebookingsystem.health;
 
+import java.time.Duration;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -28,6 +30,7 @@ public class CustomerServiceHealthIndicator
 
     @Override
     public Health health() {
+        long start = System.nanoTime();
         try {
             log.info("Checking health of customer service "
                     + "at {}", customerServiceUrl);
@@ -41,6 +44,7 @@ public class CustomerServiceHealthIndicator
 
             return Health.up()
                     .withDetail("customerService", "UP")
+                    .withDetail("latencyMs", elapsedMillis(start))
                     .build();
 
         } catch (Exception e) {
@@ -49,7 +53,12 @@ public class CustomerServiceHealthIndicator
 
             return Health.down()
                     .withDetail("customerService", "DOWN")
+                    .withDetail("latencyMs", elapsedMillis(start))
                     .build();
         }
+    }
+
+    private static long elapsedMillis(long start) {
+        return Duration.ofNanos(System.nanoTime() - start).toMillis();
     }
 }
