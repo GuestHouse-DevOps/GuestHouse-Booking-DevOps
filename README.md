@@ -3,8 +3,8 @@
 A web application for managing guest house reservations,
 built with Spring Boot, Thymeleaf, and Docker.
 
-**Production:** https://guesthouse-booking-system-production-87cb.up.railway.app
-**Staging:** https://guesthouse-booking-devops-staging.up.railway.app
+**Production:** https://guesthouse-booking-production-production.up.railway.app
+**Staging:** https://guesthouse-booking-service-staging.up.railway.app
 
 ## Team
 
@@ -81,29 +81,30 @@ the code reached production.
 5. Merge the PR. CI runs again on `main`, then pushes a
    Docker image to Docker Hub tagged with the commit SHA
    and `latest`.
-6. Railway deploys the merge commit automatically to
-   **staging**. Verify that staging looks correct before
-   deploying to production.
-7. Trigger production deploy manually via
-   **GitHub Actions → Run workflow → deploy_to_production: true**.
+6. The `Deploy to Staging` job points the Railway staging
+   service at that image and deploys it. Verify that
+   staging looks correct.
+7. The `Deploy to Production` job waits for approval. Open
+   the workflow run, click **Review deployments**, and
+   approve. Only marufmulk and joakim-epp can approve. The
+   job deploys the same image that staging runs.
 8. Check that the service is up at the health endpoint.
 
 ### Environments
 
 | Environment | URL | Deploy trigger |
 |---|---|---|
-| Staging | https://guesthouse-booking-devops-staging.up.railway.app | Automatic on merge to main |
-| Production | https://guesthouse-booking-system-production-87cb.up.railway.app | Manual via workflow_dispatch |
+| Staging | https://guesthouse-booking-service-staging.up.railway.app | Automatic on merge to main |
+| Production | https://guesthouse-booking-production-production.up.railway.app | Approval of the workflow run |
 
 Both environments use the same Docker image. Only environment
 variables differ between them.
 
 ## Rollback
 
-Railway builds production from `main`, so a rollback on
-Railway means changing `main`. Every image CI pushes is also
-on Docker Hub, tagged with its commit SHA, so you can run
-any earlier version as a container.
+Every image CI pushes is on Docker Hub, tagged with its
+commit SHA, so production can go back to any earlier version
+without changing `main`.
 
 **Option 1: revert the last commit**
 
@@ -120,10 +121,18 @@ git push -u origin fix/revert-bad-release
 ```
 
 Open a PR against `main`. Once it is merged, CI builds a
-new image and Railway deploys the reverted code to staging
-and production.
+new image, deploys it to staging, and waits for approval
+before production.
 
-**Option 2: run a specific version from Docker Hub**
+**Option 2: deploy an earlier image to production**
+
+Go to **Actions → CI/CD — Booking Service → Run workflow**
+and enter the full commit SHA of the last good release as
+`image_sha`. The run skips the build and staging, and still
+needs approval. `main` stays unchanged, so the next merge
+deploys the newest code again.
+
+**Option 3: run a specific version locally**
 
 Images live at
 https://hub.docker.com/r/marufmulk/guesthouse-booking-service/tags.
@@ -155,8 +164,7 @@ To use it with Docker Compose, set
 for the booking service in
 `GuestHouse-Infrastructure/docker-compose.yml`.
 
-This does not change what Railway runs. Production only
-moves back when `main` does, through option 1.
+This does not change what Railway runs.
 
 ## Merge Conflict
 
@@ -270,5 +278,5 @@ http://localhost:8080/actuator/health
 
 In production:
 ```
-https://guesthouse-booking-system-production-87cb.up.railway.app/actuator/health
+https://guesthouse-booking-production-production.up.railway.app/actuator/health
 ```
