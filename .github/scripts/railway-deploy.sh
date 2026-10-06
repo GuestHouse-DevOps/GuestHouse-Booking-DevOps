@@ -4,8 +4,9 @@
 # Needs RAILWAY_TOKEN set to a project token for the target environment.
 set -euo pipefail
 
-service_id="$1"
-image="$2"
+: "${RAILWAY_TOKEN:?RAILWAY_TOKEN is empty, check the Railway token secret}"
+service_id="${1:?service ID is empty, check the Railway service ID secret}"
+image="${2:?image is empty}"
 
 gql() {
   curl -fsS https://backboard.railway.com/graphql/v2 \

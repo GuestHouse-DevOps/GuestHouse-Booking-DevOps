@@ -70,7 +70,7 @@ jobs:
       - name: Deploy
         run: .github/scripts/railway-deploy.sh "$SERVICE_ID" "$IMAGE"
         env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_STAGING_TOKEN }}
           SERVICE_ID: ${{ secrets.RAILWAY_STAGING_SERVICE_ID }}
           IMAGE: ${{ secrets.DOCKER_USERNAME }}/guesthouse-booking-service:${{ github.sha }}
 
@@ -98,6 +98,6 @@ jobs:
       - name: Deploy
         run: .github/scripts/railway-deploy.sh "$SERVICE_ID" "$IMAGE"
         env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_PRODUCTION_TOKEN }}
           SERVICE_ID: ${{ secrets.RAILWAY_PRODUCTION_SERVICE_ID }}
           IMAGE: ${{ secrets.DOCKER_USERNAME }}/guesthouse-booking-service:${{ inputs.image_sha || github.sha }}
